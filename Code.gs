@@ -9,19 +9,29 @@ const CSV_BASE_URL = "https://id-info.jihs.go.jp/surveillance/idwr/jp/rapid/";
 
 function doGet(e) {
   try {
-    const sheetName = e.parameter.type || 'Teiten'; 
+    const sheetNameInput = e.parameter.type || 'Teiten';
+    
+    // 入力検証（ホワイトリスト）
+    const allowedSheets = {
+      'teiten': 'Teiten',
+      'ari': 'ARI',
+      'trend': 'Trend',
+      'tougai': 'Tougai'
+    };
+    
+    const normalizedKey = sheetNameInput.toLowerCase();
+    if (!allowedSheets.hasOwnProperty(normalizedKey)) {
+      throw new Error(`不正なシート名です: ${sheetNameInput}`);
+    }
+    
+    const targetSheetName = allowedSheets[normalizedKey];
+    
     const folder = getOrCreateFolder_(PARENT_FOLDER_ID, FOLDER_NAME);
     const ss = getOrCreateSpreadsheet_(folder, SPREADSHEET_NAME);
-    let targetSheet = ss.getSheetByName(sheetName);
+    let targetSheet = ss.getSheetByName(targetSheetName);
 
     if (!targetSheet) {
-      if (sheetName.toLowerCase() === 'teiten') targetSheet = ss.getSheetByName('Teiten');
-      else if (sheetName.toLowerCase() === 'ari') targetSheet = ss.getSheetByName('ARI');
-      else if (sheetName.toLowerCase() === 'tougai') targetSheet = ss.getSheetByName('Tougai');
-      
-      if (!targetSheet) {
-        throw new Error(`シート「${sheetName}」が見つかりません。`);
-      }
+      throw new Error(`シート「${targetSheetName}」が見つかりません。`);
     }
 
     return createCsvOutput_(targetSheet);

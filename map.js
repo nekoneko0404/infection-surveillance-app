@@ -99,6 +99,10 @@ function renderJapanMap(containerId, data, disease) {
 
         // Click event to show details
         group.addEventListener('click', () => {
+            // main.jsの状態変数を更新
+            if (typeof window.setCurrentRegion === 'function') {
+                window.setCurrentRegion(region.id);
+            }
             showRegionDetails(region.id, region.label, regionPrefectures, data, disease);
         });
 
@@ -183,20 +187,33 @@ function showRegionDetails(regionId, regionLabel, prefectures, data, disease) {
             else if (item.value >= 80.0) statusClass = 'warning';
         }
 
-        row.innerHTML = `
-            <span class="pref-name" style="cursor:pointer; text-decoration:underline;">${item.name}</span>
-            <div class="pref-bar-container">
-                <div class="pref-bar ${statusClass}" style="width: ${maxValue > 0 ? (item.value / maxValue) * 100 : 0}%"></div>
-            </div>
-            <span class="pref-value">${item.value.toFixed(2)}</span>
-        `;
-        // Add click event to pref-name
-        const nameSpan = row.querySelector('.pref-name');
+        // 安全なDOM構築 (XSS対策)
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'pref-name';
+        nameSpan.style.cursor = 'pointer';
+        nameSpan.style.textDecoration = 'underline';
+        nameSpan.textContent = item.name;
         nameSpan.addEventListener('click', () => {
             if (window.showPrefectureChart) {
                 window.showPrefectureChart(item.name, disease);
             }
         });
+
+        const barContainer = document.createElement('div');
+        barContainer.className = 'pref-bar-container';
+
+        const bar = document.createElement('div');
+        bar.className = `pref-bar ${statusClass}`;
+        bar.style.width = `${maxValue > 0 ? (item.value / maxValue) * 100 : 0}%`;
+        barContainer.appendChild(bar);
+
+        const valueSpan = document.createElement('span');
+        valueSpan.className = 'pref-value';
+        valueSpan.textContent = item.value.toFixed(2);
+
+        row.appendChild(nameSpan);
+        row.appendChild(barContainer);
+        row.appendChild(valueSpan);
         list.appendChild(row);
     });
 
@@ -218,3 +235,20 @@ function showRegionDetails(regionId, regionLabel, prefectures, data, disease) {
     `;
     content.appendChild(style);
 }
+
+// 外部から詳細パネルを更新するための関数
+window.updateDetailPanel = function (regionId, data, disease) {
+    // layoutデータなどが必要だが、ここでは簡易的にREGIONSから復元
+    const prefectures = REGIONS[regionId];
+    if (!prefectures) return;
+
+    // ラベルの復元（簡易実装：IDをそのまま使うか、マッピングを持つか）
+    // layout変数にアクセスできないため、REGIONSのキーで代用、またはマッピングを再定義
+    const regionLabels = {
+        "Hokkaido": "北海道", "Tohoku": "東北", "Kanto": "関東", "Chubu": "中部",
+        "Kansai": "関西", "Chugoku": "中国", "Shikoku": "四国", "Kyushu": "九州・沖縄"
+    };
+    const label = regionLabels[regionId] || regionId;
+
+    showRegionDetails(regionId, label, prefectures, data, disease);
+};

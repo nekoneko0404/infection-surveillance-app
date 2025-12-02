@@ -2,6 +2,13 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbype0mQoW1TFTwHEkZY2GJ2
 let cachedData = null;
 let currentDisease = 'Influenza';
 let prefectureChart = null;
+let currentRegionId = null;
+let currentPrefecture = null;
+
+window.setCurrentRegion = function (regionId) {
+    currentRegionId = regionId;
+    currentPrefecture = null; // グラフモード解除
+};
 
 // CSVパーサー (簡易版)
 function parseCSV(text) {
@@ -344,6 +351,15 @@ function switchDisease(disease) {
 
     if (cachedData) {
         renderDashboard(disease, cachedData);
+
+        // 状態復元
+        if (currentPrefecture) {
+            showPrefectureChart(currentPrefecture, disease);
+        } else if (currentRegionId) {
+            if (typeof window.updateDetailPanel === 'function') {
+                window.updateDetailPanel(currentRegionId, cachedData, disease);
+            }
+        }
     }
 }
 
@@ -394,6 +410,7 @@ function renderDashboard(disease, data) {
         document.getElementById('back-to-map-btn').addEventListener('click', () => {
             document.getElementById('map-view').classList.remove('hidden');
             document.getElementById('pref-chart-container').classList.add('hidden');
+            currentPrefecture = null; // 状態リセット
         });
     }
 
@@ -462,6 +479,9 @@ function renderTrendChart(disease, data) {
 
 function showPrefectureChart(prefecture, disease) {
     if (disease === 'ARI') return; // ARIはデータがないためスキップ
+
+    currentPrefecture = prefecture;
+    currentRegionId = null; // 詳細パネルモード解除（正確には両立しないUIの場合）
 
     // Reset chart container
     if (prefectureChart) {
