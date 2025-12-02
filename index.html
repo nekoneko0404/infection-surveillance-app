@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>感染症サーベイランス | Infection Surveillance</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+
+<body>
+    <header class="main-header">
+        <div class="container">
+            <div class="logo">
+                <span class="logo-icon">●</span>
+                <h1>Infection Surveillance</h1>
+            </div>
+            <nav>
+                <span class="last-updated">Last Updated: <span id="update-date">Loading...</span></span>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <!-- Hero Section -->
+        <section class="hero">
+            <div class="container">
+                <h2>全国感染症動向</h2>
+                <p class="hero-subtitle">最新の定点把握疾患報告数とトレンドを可視化</p>
+
+                <div class="summary-cards" id="summary-cards">
+                    <!-- Cards will be injected here -->
+                    <div class="card skeleton"></div>
+                    <div class="card skeleton"></div>
+                    <div class="card skeleton"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Disease Navigation -->
+        <section class="disease-nav">
+            <div class="container">
+                <div class="nav-grid">
+                    <button class="nav-card active" data-disease="Influenza" onclick="switchDisease('Influenza')">
+                        <div class="nav-icon">🌡️</div>
+                        <h3>インフルエンザ</h3>
+                        <p>Influenza</p>
+                    </button>
+                    <button class="nav-card" data-disease="COVID-19" onclick="switchDisease('COVID-19')">
+                        <div class="nav-icon">🦠</div>
+                        <h3>COVID-19</h3>
+                        <p>Coronavirus</p>
+                    </button>
+                    <button class="nav-card" data-disease="ARI" onclick="switchDisease('ARI')">
+                        <div class="nav-icon">🌬️</div>
+                        <h3>急性呼吸器感染症 (ARI)</h3>
+                        <p>Acute Respiratory Infection</p>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Main Content Area -->
+        <section class="dashboard">
+            <div class="container">
+                <div class="dashboard-header">
+                    <h3 id="current-disease-title">インフルエンザ 全国状況</h3>
+                </div>
+
+                <div class="dashboard-content">
+                    <!-- Content will be injected by main.js -->
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 Infection Surveillance App. Data Source: NIID/IDWR.</p>
+        </div>
+    </footer>
+
+    <script src="map.js"></script>
+    <script src="main.js"></script>
+</body>
+
+</html>
