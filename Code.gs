@@ -195,3 +195,20 @@ function scheduleRetry_() {
 function retryMain() {
   try { main(); } finally { cleanUpRetryTriggers_(); }
 }
+
+function setWeeklyTrigger() {
+  const triggers = ScriptApp.getProjectTriggers();
+  triggers.forEach(t => {
+    if (t.getHandlerFunction() === 'main') {
+      ScriptApp.deleteTrigger(t);
+    }
+  });
+  
+  ScriptApp.newTrigger('main')
+    .timeBased()
+    .onWeekDay(ScriptApp.WeekDay.THURSDAY)
+    .atHour(18)
+    .create();
+    
+  Logger.log("毎週木曜日 18:00 にトリガーを設定しました。");
+}
