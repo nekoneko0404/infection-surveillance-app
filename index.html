@@ -35,93 +35,81 @@
         </div>
     </header>
 
-    <main>
-        <!-- Hero Section with Summary Cards -->
-        <section class="hero">
-            <div class="container">
-                <h2>全国感染症動向</h2>
-                <p class="hero-subtitle">最新の定点把握疾患報告数とトレンドを可視化</p>
-                <div class="summary-cards" id="summary-cards">
-                    <!-- Cards will be injected by main.js -->
+    <div class="container">
+        <!-- 感染症選択カードコンテナを追加 -->
+        <div id="summary-cards" class="summary-cards"></div>
+        <div class="dashboard-header">
+            <h3 id="current-disease-title">インフルエンザ 全国状況</h3>
+        </div>
+        <div class="dashboard-content">
+            <div class="left-panel">
+                <div id="map-view" class="view-container">
+                    <div id="japan-map" class="map-container"></div>
                 </div>
-            </div>
-        </section>
-
-        <!-- Dashboard: Map + Description on the left, Chart on the right -->
-        <section class="dashboard">
-            <div class="container">
-                <div class="dashboard-header">
-                    <h3 id="current-disease-title">インフルエンザ 全国状況</h3>
-                </div>
-                <div class="dashboard-content">
-                    <div class="left-panel">
-                        <div id="map-view" class="view-container">
-                            <div id="japan-map" class="map-container"></div>
-                        </div>
-                        <div id="pref-chart-container" class="view-container hidden"
-                            style="background:white; padding:20px; border-radius:12px; height:600px; position:relative;">
-                            <button id="back-to-map-btn"
-                                style="position:absolute; top:10px; right:10px; z-index:10; padding: 5px 10px; cursor: pointer;">戻る</button>
-                            <div style="height: 100%; width: 100%;">
-                                <canvas id="prefectureHistoryChart"></canvas>
-                            </div>
-                        </div>
-                        <div class="description-accordion">
-                            <button class="accordion-header" id="accordion-toggle">
-                                地図の使い方・色の基準
-                                <span class="icon">▼</span>
-                            </button>
-                            <div class="accordion-content" id="accordion-content">
-                                <h3>地図の使い方</h3>
-                                <p>地域をクリックすると、その地域の都道府県ごとの数値が右側のパネルに表示されます。<br>
-                                    都道府県名をクリックすると、その都道府県の過去の推移グラフが表示されます。<br>
-                                    <small>（※ARIはグラフ表示に対応していません）</small>
-                                </p>
-
-                                <h3>色の基準</h3>
-                                <div class="legend-section">
-                                    <h4>インフルエンザ <small>（国立感染症研究所 感染症疫学センター 基準）</small></h4>
-                                    <ul>
-                                        <li><span class="color-badge red"></span> 30.0以上: 警報レベル</li>
-                                        <li><span class="color-badge orange"></span> 10.0以上: 注意報レベル</li>
-                                        <li><span class="color-badge yellow"></span> 1.0以上: 流行入り</li>
-                                        <li><span class="color-badge green"></span> 1.0未満: 平常</li>
-                                    </ul>
-
-                                    <h4>COVID-19 <small>（山梨県基準）</small></h4>
-                                    <ul>
-                                        <li><span class="color-badge red"></span> 15.0以上: 警報レベル相当</li>
-                                        <li><span class="color-badge orange"></span> 10.0以上: 注意報レベル相当</li>
-                                        <li><span class="color-badge green"></span> 10.0未満: 平常</li>
-                                    </ul>
-
-                                    <h4>急性呼吸器感染症 (ARI) <small>（公的な基準なし　適当に色分け）</small></h4>
-                                    <ul>
-                                        <li><span class="color-badge red"></span> 120.0以上: 流行レベル</li>
-                                        <li><span class="color-badge orange"></span> 80.0以上: 注意が必要</li>
-                                        <li><span class="color-badge green"></span> 80.0未満: 平常</li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
+                <div id="pref-chart-container" class="view-container hidden"
+                    style="background:white; padding:20px; border-radius:12px; height:600px; position:relative;">
+                    <button id="back-to-map-btn"
+                        style="position:absolute; top:10px; right:10px; z-index:10; padding: 5px 10px; cursor: pointer;">戻る</button>
+                    <div style="height: 100%; width: 100%;">
+                        <canvas id="prefectureHistoryChart"></canvas>
                     </div>
-                    <div class="right-panel">
-                        <div id="chart-view" class="chart-container-wrapper">
-                            <canvas id="trendChart"></canvas>
-                        </div>
-                        <div class="detail-panel" id="detail-panel">
-                            <div class="panel-header">
-                                <h4 id="region-title">地域詳細</h4>
-                                <button class="close-btn" onclick="closePanel()">×</button>
-                            </div>
-                            <div class="panel-content" id="region-content">
-                                <p class="placeholder-text">地図上のエリアをクリックすると詳細が表示されます。</p>
-                            </div>
+                </div>
+                <div class="description-accordion">
+                    <button class="accordion-header" id="accordion-toggle">
+                        地図の使い方・色の基準
+                        <span class="icon">▼</span>
+                    </button>
+                    <div class="accordion-content" id="accordion-content">
+                        <h3>地図の使い方</h3>
+                        <p>地域をクリックすると、その地域の都道府県ごとの数値が右側のパネルに表示されます。<br>
+                            都道府県名をクリックすると、その都道府県の過去の推移グラフが表示されます。<br>
+                            <small>（※ARIはグラフ表示に対応していません）</small>
+                        </p>
+
+                        <h3>色の基準</h3>
+                        <div class="legend-section">
+                            <h4>インフルエンザ <small>（国立感染症研究所 感染症疫学センター 基準）</small></h4>
+                            <ul>
+                                <li><span class="color-badge red"></span> 30.0以上: 警報レベル</li>
+                                <li><span class="color-badge orange"></span> 10.0以上: 注意報レベル</li>
+                                <li><span class="color-badge yellow"></span> 1.0以上: 流行入り</li>
+                                <li><span class="color-badge green"></span> 1.0未満: 平常</li>
+                            </ul>
+
+                            <h4>COVID-19 <small>（山梨県基準）</small></h4>
+                            <ul>
+                                <li><span class="color-badge red"></span> 15.0以上: 警報レベル相当</li>
+                                <li><span class="color-badge orange"></span> 10.0以上: 注意報レベル相当</li>
+                                <li><span class="color-badge green"></span> 10.0未満: 平常</li>
+                            </ul>
+
+                            <h4>急性呼吸器感染症 (ARI) <small>（公的な基準なし　適当に色分け）</small></h4>
+                            <ul>
+                                <li><span class="color-badge red"></span> 120.0以上: 流行レベル</li>
+                                <li><span class="color-badge orange"></span> 80.0以上: 注意が必要</li>
+                                <li><span class="color-badge green"></span> 80.0未満: 平常</li>
+                            </ul>
                         </div>
                     </div>
                 </div>
             </div>
-        </section>
+            <div class="right-panel">
+                <div id="chart-view" class="chart-container-wrapper">
+                    <canvas id="trendChart"></canvas>
+                </div>
+                <div class="detail-panel" id="detail-panel">
+                    <div class="panel-header">
+                        <h4 id="region-title">地域詳細</h4>
+                        <button class="close-btn" onclick="closePanel()">×</button>
+                    </div>
+                    <div class="panel-content" id="region-content">
+                        <p class="placeholder-text">地図上のエリアをクリックすると詳細が表示されます。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    </section>
     </main>
 
     <footer>

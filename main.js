@@ -49,74 +49,6 @@ async function fetchCSV(type) {
     }
 }
 
-async function init() {
-    try {
-        updateLoadingState(true);
-
-        // Accordion Toggle
-        const accordionToggle = document.getElementById('accordion-toggle');
-        const accordionContent = document.getElementById('accordion-content');
-        if (accordionToggle && accordionContent) {
-            accordionToggle.addEventListener('click', () => {
-                const isOpen = accordionContent.classList.toggle('open');
-                accordionToggle.classList.toggle('open');
-            });
-        }
-
-        const [teitenCsv, ariCsv, tougaiCsv] = await Promise.all([
-            fetchCSV('Teiten'),
-            fetchCSV('ARI'),
-            fetchCSV('Tougai')
-        ]);
-
-        const teitenData = parseCSV(teitenCsv);
-        const ariData = parseCSV(ariCsv);
-        const tougaiData = parseCSV(tougaiCsv);
-
-        const processedData = processData(teitenData, ariData, tougaiData);
-        cachedData = processedData;
-
-        const dateMatch = teitenCsv.match(/(\d{4})年(\d{1,2})週/);
-        const dateElement = document.getElementById('update-date');
-
-        if (dateElement) {
-            if (dateMatch) {
-                dateElement.textContent = `${dateMatch[1]}年 第${dateMatch[2]}週`;
-            } else {
-                dateElement.textContent = new Date().toLocaleDateString('ja-JP');
-            }
-        }
-
-        // Back button event listener
-        const backBtn = document.getElementById('back-to-map-btn');
-        if (backBtn) {
-            backBtn.addEventListener('click', () => {
-                const mapView = document.getElementById('map-view');
-                const chartContainer = document.getElementById('pref-chart-container');
-                if (mapView) mapView.classList.remove('hidden');
-                if (chartContainer) chartContainer.classList.add('hidden');
-                currentPrefecture = null;
-            });
-        }
-
-        renderSummary(processedData);
-        renderDashboard(currentDisease, processedData);
-        updateLoadingState(false);
-
-    } catch (error) {
-        console.error('Error fetching data:', error);
-        const summaryCards = document.getElementById('summary-cards');
-        if (summaryCards) {
-            summaryCards.innerHTML = '<p class="error">データの取得に失敗しました。詳細: ' + error.message + '</p>';
-        }
-        updateLoadingState(false);
-    }
-}
-
-function updateLoadingState(isLoading) {
-    // const container = document.getElementById('summary-cards');
-}
-
 function processData(teitenRows, ariRows, tougaiRows) {
     const influenzaData = parseTeitenRows(teitenRows, 'Influenza');
     const covid19Data = parseTeitenRows(teitenRows, 'COVID-19');
@@ -137,7 +69,10 @@ function processData(teitenRows, ariRows, tougaiRows) {
 }
 
 function parseTeitenRows(rows, diseaseName) {
-    if (!rows || rows.length < 5) return [];
+    if (!rows || rows.length < 5) {
+        console.warn('Rows are empty or too short', rows);
+        return [];
+    }
 
     const prefectures = [
         '北海道', '青森県', '岩手県', '宮城県', '秋田県', '山形県', '福島県',
@@ -181,7 +116,7 @@ function parseTeitenRows(rows, diseaseName) {
         const row = rows[i];
         if (row.length <= diseaseColumnIndex) continue;
 
-        const prefName = (row[0] || '').trim();
+        const prefName = String(row[0] || '').trim();
         const value = parseFloat(row[diseaseColumnIndex]);
         const cleanValue = isNaN(value) ? 0 : value;
 
@@ -212,7 +147,7 @@ function parseAriRows(rows, diseaseName) {
     const extractedData = [];
     for (let i = 4; i < rows.length; i++) {
         const row = rows[i];
-        const prefName = (row[0] || '').trim();
+        const prefName = String(row[0] || '').trim();
         const value = parseFloat(row[valueColumnIndex]);
         const cleanValue = isNaN(value) ? 0 : value;
 
@@ -231,18 +166,25 @@ function parseTougaiRows(rows) {
     const historyData = [];
 
     // インフルエンザとCOVID-19の開始行を探す
-    // 行の1列目に疾患名があるか、あるいはヘッダー行の上にあるか
     let influenzaStartRow = -1;
     let covidStartRow = -1;
 
     for (let i = 0; i < rows.length; i++) {
-        // A列、B列、C列あたりをチェック
-        const rowStr = rows[i].slice(0, 5).join(' '); // 最初の5列を結合して検索
-        if (rowStr.includes('インフルエンザ')) influenzaStartRow = i;
-        if (rowStr.includes('COVID-19') || rowStr.includes('新型コロナ')) covidStartRow = i;
+        const rowStr = String(rows[i][0] || '') + String(rows[i][1] || ''); // 0列目か1列目あたりに含まれると想定
+        // より安全に: 行全体を文字列化して検索 (ただしカンマ区切りになるので注意)
+        // const rowAllStr = rows[i].join(',');
+        // 今回は単純に1列目(疾患名ヘッダーの可能性)をチェック
+
+        // rows[i]自体が配列なので、rows[i][0]などをチェックすべきだが、
+        // Tougai(統計)データの構造が不明確なので、行全体を文字列化して判定するアプローチはあながち間違いではないが、
+        // rows[i] は配列なので String(rows[i]) は "col1,col2..." となる。
+        // なので元のコード `String(rows[i] || '')` は動くが、意図として不明瞭。
+        // ここは安全策として join を使う
+        const rowContent = rows[i].join('');
+        if (rowContent.includes('インフルエンザ')) influenzaStartRow = i;
+        if (rowContent.includes('COVID-19') || rowContent.includes('新型コロナ')) covidStartRow = i;
     }
 
-    console.log('Tougai Search Results:', { influenzaStartRow, covidStartRow });
 
     if (influenzaStartRow !== -1) {
         historyData.push(...extractHistoryFromSection(rows, influenzaStartRow, 'Influenza'));
@@ -256,9 +198,6 @@ function parseTougaiRows(rows) {
 
 function extractHistoryFromSection(rows, startRowIndex, diseaseName) {
     const results = [];
-    // ヘッダー行は startRowIndex + 1 (週番号), + 2 (定当/報告) と仮定
-    // データ行は + 3 から
-    // 週番号ヘッダー行から、各週の「定当」列のインデックスを特定する
     const weekHeaderRow = rows[startRowIndex + 1];
     const typeHeaderRow = rows[startRowIndex + 2];
 
@@ -268,22 +207,18 @@ function extractHistoryFromSection(rows, startRowIndex, diseaseName) {
         const weekText = weekHeaderRow[i];
         const match = weekText.match(/(\d{1,2})週/);
         if (match) {
-            // この週の「定当」列を探す（直下かその右）
-            // weekHeaderRowのセル結合により、定当列は i ではなく i+1 かもしれない
-            // typeHeaderRow を見て '定当' を探す
             if ((typeHeaderRow[i] || '').includes('定当')) {
-                weekColumns.push({ week: parseInt(match[1]), colIndex: i });
+                weekColumns.push({ week: parseInt(match), colIndex: i });
             } else if ((typeHeaderRow[i + 1] || '').includes('定当')) {
-                weekColumns.push({ week: parseInt(match[1]), colIndex: i + 1 });
+                weekColumns.push({ week: parseInt(match), colIndex: i + 1 });
             }
         }
     }
 
     // データ抽出
-    // startRowIndex + 3 (総数) から、空行または次のセクションまで
     for (let i = startRowIndex + 3; i < rows.length; i++) {
         const row = rows[i];
-        const prefName = (row[0] || '').trim();
+        const prefName = String(row[0] || '').trim();
         if (!prefName) break; // 空行なら終了
         if (prefName.includes('COVID-19') || prefName.includes('インフルエンザ')) break; // 次のセクション
 
@@ -334,9 +269,7 @@ function renderSummary(data) {
     const container = document.getElementById('summary-cards');
     if (!container) return;
     container.innerHTML = '';
-
     const diseases = ['Influenza', 'COVID-19', 'ARI'];
-
     diseases.forEach(disease => {
         const nationalData = data.data.find(d => d.disease === disease && d.prefecture === '全国');
         const alert = data.summary.alerts.find(a => a.disease === disease);
@@ -359,13 +292,8 @@ function renderSummary(data) {
 function switchDisease(disease) {
     currentDisease = disease;
 
-    // Update active card
     document.querySelectorAll('.summary-cards .card').forEach(card => {
-        if (card.dataset.disease === disease) {
-            card.classList.add('active');
-        } else {
-            card.classList.remove('active');
-        }
+        card.classList.toggle('active', card.dataset.disease === disease);
     });
 
     const titleElement = document.getElementById('current-disease-title');
@@ -373,7 +301,6 @@ function switchDisease(disease) {
         titleElement.textContent = `${getDiseaseName(disease)} 全国状況`;
     }
 
-    // Reset view to map
     const mapView = document.getElementById('map-view');
     const prefChartContainer = document.getElementById('pref-chart-container');
     if (mapView && prefChartContainer) {
@@ -382,7 +309,6 @@ function switchDisease(disease) {
     }
     currentPrefecture = null;
 
-    // 現在選択されている地域の詳細パネルも更新する
     if (currentRegionId && typeof window.updateDetailPanel === 'function' && cachedData) {
         window.updateDetailPanel(currentRegionId, cachedData, disease);
     } else {
@@ -470,12 +396,11 @@ function renderTrendChart(disease, data) {
 }
 
 function showPrefectureChart(prefecture, disease) {
-    if (disease === 'ARI') return; // ARIはデータがないためスキップ
+    if (disease === 'ARI') return;
 
     currentPrefecture = prefecture;
-    currentRegionId = null; // 詳細パネルモード解除（正確には両立しないUIの場合）
+    currentRegionId = null;
 
-    // Reset chart container
     if (prefectureChart) {
         prefectureChart.destroy();
         prefectureChart = null;
@@ -492,22 +417,17 @@ function showPrefectureChart(prefecture, disease) {
 
     const ctx = document.getElementById('prefectureHistoryChart').getContext('2d');
 
-    if (prefectureChart) {
-        prefectureChart.destroy();
-    }
-
     const weeks = historyItem.history.map(h => `${h.week}週`);
     const values = historyItem.history.map(h => h.value);
 
-    // 閾値設定
     let warningLevel = 0;
     let alertLevel = 0;
     if (disease === 'Influenza') {
-        warningLevel = 10.0; // 注意報
-        alertLevel = 30.0;   // 警報
+        warningLevel = 10.0;
+        alertLevel = 30.0;
     } else if (disease === 'COVID-19') {
-        warningLevel = 10.0; // 注意報
-        alertLevel = 15.0;   // 警報
+        warningLevel = 10.0;
+        alertLevel = 15.0;
     }
 
     prefectureChart = new Chart(ctx, {
@@ -517,20 +437,17 @@ function showPrefectureChart(prefecture, disease) {
             datasets: [{
                 label: `${prefecture} ${getDiseaseName(disease)} (2025年)`,
                 data: values,
-                borderColor: '#ccc', // デフォルト色
+                borderColor: '#ccc',
                 backgroundColor: 'rgba(0, 0, 0, 0)',
                 tension: 0.1,
                 fill: false,
                 segment: {
                     borderColor: ctx => {
-                        // segmentコンテキストから値を取得
                         if (!ctx.p0.parsed || !ctx.p1.parsed) return '#ccc';
-
                         const val = Math.max(ctx.p0.parsed.y, ctx.p1.parsed.y);
-
-                        if (val >= alertLevel) return '#e74c3c'; // Alert Red
-                        if (val >= warningLevel) return '#f39c12'; // Warning Orange
-                        return '#2ecc71'; // Normal Green
+                        if (val >= alertLevel) return '#e74c3c';
+                        if (val >= warningLevel) return '#f39c12';
+                        return '#2ecc71';
                     }
                 },
                 pointBackgroundColor: ctx => {
@@ -568,8 +485,6 @@ function showPrefectureChart(prefecture, disease) {
         }
     });
 }
-
-// Global scope for map.js to call
 window.showPrefectureChart = showPrefectureChart;
 
 function closePanel() {
@@ -580,6 +495,71 @@ function closePanel() {
     const title = document.getElementById('region-title');
     if (title) {
         title.textContent = '地域詳細';
+    }
+}
+
+function updateLoadingState(isLoading) {
+    const summaryCards = document.getElementById('summary-cards');
+    if (!summaryCards) return;
+
+    if (isLoading) {
+        // Skeleton view is already in HTML
+    } else {
+        // Remove skeleton elements if they exist
+    }
+}
+
+async function init() {
+    try {
+        updateLoadingState(true);
+
+        const accordionToggle = document.getElementById('accordion-toggle');
+        const accordionContent = document.getElementById('accordion-content');
+        if (accordionToggle && accordionContent) {
+            accordionToggle.addEventListener('click', () => {
+                accordionContent.classList.toggle('open');
+                accordionToggle.classList.toggle('open');
+            });
+        }
+
+        const [teitenCsv, ariCsv, tougaiCsv] = await Promise.all([
+            fetchCSV('Teiten'),
+            fetchCSV('ARI'),
+            fetchCSV('Tougai')
+        ]);
+
+        const teitenData = parseCSV(teitenCsv);
+        const ariData = parseCSV(ariCsv);
+        const tougaiData = parseCSV(tougaiCsv);
+
+        cachedData = processData(teitenData, ariData, tougaiData);
+
+        const dateMatch = teitenCsv.match(/(\d{4})年(\d{1,2})週/);
+        const dateElement = document.getElementById('update-date');
+        if (dateElement) {
+            dateElement.textContent = dateMatch ? `${dateMatch[1]}年 第${dateMatch[2]}週` : new Date().toLocaleDateString('ja-JP');
+        }
+
+        const backBtn = document.getElementById('back-to-map-btn');
+        if (backBtn) {
+            backBtn.addEventListener('click', () => {
+                document.getElementById('map-view').classList.remove('hidden');
+                document.getElementById('pref-chart-container').classList.add('hidden');
+                currentPrefecture = null;
+            });
+        }
+
+        renderSummary(cachedData);
+        renderDashboard(currentDisease, cachedData);
+        updateLoadingState(false);
+
+    } catch (error) {
+        console.error('Error fetching data:', error);
+        const summaryCards = document.getElementById('summary-cards');
+        if (summaryCards) {
+            summaryCards.innerHTML = `<p class="error">データの取得に失敗しました。詳細: ${error.message}</p>`;
+        }
+        updateLoadingState(false);
     }
 }
 
