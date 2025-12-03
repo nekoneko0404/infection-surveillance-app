@@ -499,13 +499,11 @@ function closePanel() {
 }
 
 function updateLoadingState(isLoading) {
-    const summaryCards = document.getElementById('summary-cards');
-    if (!summaryCards) return;
-
+    const container = document.body;
     if (isLoading) {
-        // Skeleton view is already in HTML
+        container.classList.add('loading');
     } else {
-        // Remove skeleton elements if they exist
+        container.classList.remove('loading');
     }
 }
 
@@ -551,6 +549,8 @@ async function init() {
 
         renderSummary(cachedData);
         renderDashboard(currentDisease, cachedData);
+        // データの取得・処理が終わってから少し待つ（アニメーションを見せるため）
+        await new Promise(resolve => setTimeout(resolve, 500));
         updateLoadingState(false);
 
     } catch (error) {

@@ -37,14 +37,35 @@
 
     <div class="container">
         <!-- 感染症選択カードコンテナを追加 -->
-        <div id="summary-cards" class="summary-cards"></div>
+        <div id="summary-cards" class="summary-cards">
+            <!-- Skeleton for Summary Cards -->
+            <div class="skeleton-card-wrapper">
+                <div class="skeleton-card">
+                    <div class="skeleton skeleton-title"></div>
+                    <div class="skeleton skeleton-value"></div>
+                    <div class="skeleton skeleton-status"></div>
+                </div>
+                <div class="skeleton-card">
+                    <div class="skeleton skeleton-title"></div>
+                    <div class="skeleton skeleton-value"></div>
+                    <div class="skeleton skeleton-status"></div>
+                </div>
+                <div class="skeleton-card">
+                    <div class="skeleton skeleton-title"></div>
+                    <div class="skeleton skeleton-value"></div>
+                    <div class="skeleton skeleton-status"></div>
+                </div>
+            </div>
+        </div>
         <div class="dashboard-header">
             <h3 id="current-disease-title">インフルエンザ 全国状況</h3>
         </div>
         <div class="dashboard-content">
             <div class="left-panel">
                 <div id="map-view" class="view-container">
-                    <div id="japan-map" class="map-container"></div>
+                    <div id="japan-map" class="map-container">
+                        <div class="skeleton skeleton-map"></div>
+                    </div>
                 </div>
                 <div id="pref-chart-container" class="view-container hidden"
                     style="background:white; padding:20px; border-radius:12px; height:600px; position:relative;">
@@ -95,6 +116,7 @@
             </div>
             <div class="right-panel">
                 <div id="chart-view" class="chart-container-wrapper">
+                    <div class="skeleton skeleton-chart"></div>
                     <canvas id="trendChart"></canvas>
                 </div>
                 <div class="detail-panel" id="detail-panel">
@@ -103,7 +125,11 @@
                         <button class="close-btn" onclick="closePanel()">×</button>
                     </div>
                     <div class="panel-content" id="region-content">
-                        <p class="placeholder-text">地図上のエリアをクリックすると詳細が表示されます。</p>
+                        <div class="skeleton-details">
+                            <div class="skeleton skeleton-text"></div>
+                            <div class="skeleton skeleton-text"></div>
+                            <div class="skeleton skeleton-text"></div>
+                        </div>
                     </div>
                 </div>
             </div>
