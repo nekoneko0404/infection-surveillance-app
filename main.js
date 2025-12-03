@@ -301,17 +301,57 @@ function switchDisease(disease) {
         titleElement.textContent = `${getDiseaseName(disease)} 全国状況`;
     }
 
-    const mapView = document.getElementById('map-view');
-    const prefChartContainer = document.getElementById('pref-chart-container');
-    if (mapView && prefChartContainer) {
-        mapView.classList.remove('hidden');
-        prefChartContainer.classList.add('hidden');
-    }
-    currentPrefecture = null;
-
-    if (currentRegionId && typeof window.updateDetailPanel === 'function' && cachedData) {
-        window.updateDetailPanel(currentRegionId, cachedData, disease);
+    // グラフ表示モード（都道府県選択中）の場合は、グラフを更新して維持する
+    if (currentPrefecture) {
+        showPrefectureChart(currentPrefecture, disease);
     } else {
+        // 地図モードの場合は地図を表示
+        const mapView = document.getElementById('map-view');
+        const prefChartContainer = document.getElementById('pref-chart-container');
+        if (mapView && prefChartContainer) {
+            mapView.classList.remove('hidden');
+            prefChartContainer.classList.add('hidden');
+        }
+    }
+
+    // 右パネルの更新（地域詳細パネル）
+    // グラフ表示中も、その都道府県の詳細データを表示し続けるのが自然
+    // ただし、currentRegionId は showPrefectureChart で null にされることがあるため、
+    // currentPrefecture がある場合はその ID を特定するか、
+    // 既存のロジック（updateDetailPanel）が ID ベースなら ID が必要。
+    // showPrefectureChart では currentRegionId = null にしているが、
+    // updateDetailPanel は regionId を引数にとる。
+    // ここでは、地図モードの時のみ updateDetailPanel を呼ぶか、
+    // あるいは currentPrefecture から regionId を逆引きできればベストだが、
+    // 簡易的に「地図モードで選択中の場合」のみ更新し、グラフモードでは詳細パネルは
+    // そのまま（あるいは閉じる）とするのが安全かもしれない。
+    // しかし、要望は「そのままその都道府県のグラフを表示」なので、右パネルの挙動については
+    // 明示されていないが、整合性を保つなら閉じるか、その県の情報を出すべき。
+    // 現状の switchDisease の実装では、currentRegionId があれば updateDetailPanel を呼んでいる。
+    // showPrefectureChart で currentRegionId = null になるので、
+    // グラフモードではここはスキップされるはず。
+
+    if (!currentPrefecture) {
+        if (currentRegionId && typeof window.updateDetailPanel === 'function' && cachedData) {
+            window.updateDetailPanel(currentRegionId, cachedData, disease);
+        } else {
+            closePanel();
+        }
+    } else {
+        // グラフモードの時は詳細パネルをどうするか？
+        // 要望にはないが、グラフを見ているなら詳細パネルもその県の情報だと親切。
+        // ただし ID がわからないと updateDetailPanel が呼べない。
+        // map.js 側に id と name の対応があればよいが、ここでは不明。
+        // いったん「グラフ維持」を優先し、右パネルは既存動作（currentRegionIdがnullならclosePanel）に任せるか、
+        // 明示的に閉じる。
+        // showPrefectureChart 内で currentRegionId = null にしているので、
+        // 上記の if (!currentPrefecture) ブロックに入らなければ何もしないことになる。
+        // それでよいか確認。
+        // 元のコード:
+        // if (currentRegionId ... ) updateDetailPanel ... else closePanel()
+        // グラフモードだと currentRegionId は null なので closePanel() が呼ばれていたはず。
+        // グラフを見ている時に右パネルが「地域詳細」初期状態に戻るのは違和感があるかもしれないが、
+        // 少なくとも「グラフが消えて地図に戻る」ことは防げる。
         closePanel();
     }
 
@@ -549,6 +589,10 @@ async function init() {
 
         renderSummary(cachedData);
         renderDashboard(currentDisease, cachedData);
+
+        // 地域詳細パネルの初期表示（「地図上のエリアをクリック...」を表示）
+        closePanel();
+
         // データの取得・処理が終わってから少し待つ（アニメーションを見せるため）
         await new Promise(resolve => setTimeout(resolve, 500));
         updateLoadingState(false);
