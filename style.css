@@ -1,6 +1,7 @@
+/* Design Tokens */
 :root {
     --primary-color: #0056b3;
-    /* Deep Blue from reference */
+    /* Deep Blue */
     --secondary-color: #00a0e9;
     /* Lighter Blue */
     --accent-color: #f39c12;
@@ -18,6 +19,7 @@
     --font-en: 'Inter', sans-serif;
 }
 
+/* Reset */
 * {
     box-sizing: border-box;
     margin: 0;
@@ -87,76 +89,103 @@ body {
     margin-bottom: 2rem;
 }
 
+/* Summary Cards – single row of three cards */
 .summary-cards {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    display: flex;
+    flex-wrap: nowrap;
     gap: 20px;
     margin-top: 20px;
+    overflow-x: auto;
+    padding: 10px 5px 15px 5px;
+    /* Add padding to prevent clipping of hover effects */
 }
 
-.card {
+.summary-cards .card {
+    flex: 0 0 calc(33.333% - 13.33px);
     background: var(--card-bg);
     padding: 20px;
     border-radius: var(--border-radius);
-    box-shadow: var(--shadow);
-    text-align: left;
-    transition: transform 0.2s ease;
-}
-
-.card:hover {
-    transform: translateY(-5px);
-}
-
-/* Disease Navigation */
-.disease-nav {
-    padding: 2rem 0;
-}
-
-.nav-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
-}
-
-.nav-card {
-    background: white;
-    border: none;
-    padding: 20px;
-    border-radius: var(--border-radius);
-    box-shadow: var(--shadow);
+    box-shadow: none;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    border-top: 4px solid transparent;
+    /* Prepare for colored top border */
     cursor: pointer;
-    transition: all 0.3s ease;
-    text-align: center;
-    border: 2px solid transparent;
+    position: relative;
+    overflow: hidden;
 }
 
-.nav-card:hover {
-    background-color: #f8f9fa;
+.summary-cards .card:hover {
+    transform: translateY(-2px);
 }
 
-.nav-card.active {
-    border-color: var(--primary-color);
-    background-color: #e3f2fd;
-}
-
-.nav-icon {
-    font-size: 2.5rem;
+.summary-cards .card h4 {
     margin-bottom: 10px;
+    font-size: 1.1rem;
+    color: var(--text-sub);
 }
 
-.nav-card h3 {
-    font-size: 1.2rem;
+.summary-cards .card .value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-main);
     margin-bottom: 5px;
-    color: var(--primary-color);
 }
 
-.nav-card p {
+.summary-cards .card .unit {
     font-size: 0.9rem;
     color: var(--text-sub);
-    font-family: var(--font-en);
+    font-weight: normal;
 }
 
-/* Dashboard */
+.summary-cards .card.active {
+    background-color: #fff;
+    border-color: rgba(0, 0, 0, 0.05);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+}
+
+/* Status Colors - Inactive State (Faint gradient) */
+.summary-cards .card[data-status="alert"] {
+    background: linear-gradient(to bottom, #fff5f5, #ffffff);
+}
+
+.summary-cards .card[data-status="warning"] {
+    background: linear-gradient(to bottom, #fffaf0, #ffffff);
+}
+
+.summary-cards .card[data-status="normal"] {
+    background: linear-gradient(to bottom, #f0fff4, #ffffff);
+}
+
+/* Active State Colors based on Status */
+.summary-cards .card[data-status="alert"].active {
+    border-top-color: var(--alert-color);
+    background: linear-gradient(to bottom, #ffebee, #ffffff);
+}
+
+.summary-cards .card[data-status="alert"].active h4 {
+    color: var(--alert-color);
+}
+
+.summary-cards .card[data-status="warning"].active {
+    border-top-color: var(--accent-color);
+    background: linear-gradient(to bottom, #fff3e0, #ffffff);
+}
+
+.summary-cards .card[data-status="warning"].active h4 {
+    color: var(--accent-color);
+}
+
+.summary-cards .card[data-status="normal"].active {
+    border-top-color: #2ecc71;
+    background: linear-gradient(to bottom, #e8f5e9, #ffffff);
+}
+
+.summary-cards .card[data-status="normal"].active h4 {
+    color: #2ecc71;
+}
+
+/* Dashboard Layout */
 .dashboard {
     padding-bottom: 4rem;
 }
@@ -171,13 +200,12 @@ body {
 .dashboard-content {
     display: grid;
     grid-template-columns: 2fr 1fr;
-    /* Left: Map, Right: Panel */
     gap: 20px;
     min-height: 600px;
     align-items: start;
 }
 
-.right-panel {
+.left-panel {
     display: flex;
     flex-direction: column;
     gap: 20px;
@@ -188,8 +216,126 @@ body {
     padding: 20px;
     border-radius: var(--border-radius);
     box-shadow: var(--shadow);
-    position: relative;
     height: 100%;
+    position: relative;
+}
+
+/* Map Description Accordion */
+.description-accordion {
+    background: var(--card-bg);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+}
+
+.accordion-header {
+    width: 100%;
+    padding: 15px;
+    background: white;
+    border: none;
+    text-align: left;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-main);
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background-color 0.2s;
+}
+
+.accordion-header:hover {
+    background-color: #f8f9fa;
+}
+
+.accordion-header .icon {
+    font-size: 0.8rem;
+    transition: transform 0.3s ease;
+}
+
+.accordion-header.open .icon {
+    transform: rotate(180deg);
+}
+
+.accordion-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out, padding 0.3s ease;
+    background-color: #fdfdfd;
+}
+
+.accordion-content.open {
+    max-height: 1000px;
+    /* Enough to show content */
+    padding: 15px;
+    border-top: 1px solid #eee;
+}
+
+.accordion-content h3 {
+    font-size: 1rem;
+    margin-bottom: 10px;
+    color: var(--primary-color);
+    border-bottom: 2px solid #eee;
+    padding-bottom: 5px;
+}
+
+.accordion-content h4 {
+    font-size: 0.9rem;
+    margin-top: 15px;
+    margin-bottom: 8px;
+    color: var(--text-sub);
+}
+
+.accordion-content p {
+    font-size: 0.9rem;
+    color: var(--text-main);
+    margin-bottom: 15px;
+    line-height: 1.5;
+}
+
+.legend-section ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.legend-section li {
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    margin-bottom: 6px;
+    color: var(--text-main);
+}
+
+.color-badge {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    margin-right: 8px;
+    flex-shrink: 0;
+}
+
+.color-badge.red {
+    background-color: var(--alert-color);
+}
+
+.color-badge.orange {
+    background-color: var(--accent-color);
+}
+
+.color-badge.yellow {
+    background-color: #f1c40f;
+}
+
+.color-badge.green {
+    background-color: #2ecc71;
+}
+
+.right-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
 }
 
 .chart-container-wrapper {
@@ -198,60 +344,14 @@ body {
     border-radius: var(--border-radius);
     box-shadow: var(--shadow);
     height: 300px;
-    /* Fixed height for chart */
 }
 
-.japan-map-wrapper {
-    width: 100%;
-    height: 450px;
-    background-color: #f9f9f9;
-    /* Placeholder for map */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 8px;
-}
-
-.map-legend {
-    margin-top: 15px;
-    display: flex;
-    gap: 20px;
-    justify-content: center;
-}
-
-.legend-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.9rem;
-}
-
-.color-box {
-    width: 16px;
-    height: 16px;
-    border-radius: 4px;
-}
-
-.level-alert {
-    background-color: var(--alert-color);
-}
-
-.level-warning {
-    background-color: var(--accent-color);
-}
-
-.level-normal {
-    background-color: #2ecc71;
-}
-
-/* Detail Panel */
 .detail-panel {
     background: white;
     padding: 20px;
     border-radius: var(--border-radius);
     box-shadow: var(--shadow);
     max-height: 400px;
-    /* Reduced max-height since it shares space with chart */
     overflow-y: auto;
 }
 
@@ -276,6 +376,7 @@ body {
     color: #999;
     text-align: center;
     margin-top: 50px;
+    display: block;
 }
 
 /* Utilities */
@@ -302,11 +403,15 @@ body {
 
 /* Responsive */
 @media (max-width: 768px) {
-    .nav-grid {
+    .dashboard-content {
         grid-template-columns: 1fr;
     }
 
-    .dashboard-content {
-        grid-template-columns: 1fr;
+    .summary-cards {
+        flex-wrap: wrap;
+    }
+
+    .summary-cards .card {
+        flex: 0 0 100%;
     }
 }

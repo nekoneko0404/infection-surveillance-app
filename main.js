@@ -53,6 +53,16 @@ async function init() {
     try {
         updateLoadingState(true);
 
+        // Accordion Toggle
+        const accordionToggle = document.getElementById('accordion-toggle');
+        const accordionContent = document.getElementById('accordion-content');
+        if (accordionToggle && accordionContent) {
+            accordionToggle.addEventListener('click', () => {
+                const isOpen = accordionContent.classList.toggle('open');
+                accordionToggle.classList.toggle('open');
+            });
+        }
+
         const [teitenCsv, ariCsv, tougaiCsv] = await Promise.all([
             fetchCSV('Teiten'),
             fetchCSV('ARI'),
@@ -67,10 +77,26 @@ async function init() {
         cachedData = processedData;
 
         const dateMatch = teitenCsv.match(/(\d{4})年(\d{1,2})週/);
-        if (dateMatch) {
-            document.getElementById('update-date').textContent = `${dateMatch[1]}年 第${dateMatch[2]}週`;
-        } else {
-            document.getElementById('update-date').textContent = new Date().toLocaleDateString('ja-JP');
+        const dateElement = document.getElementById('update-date');
+
+        if (dateElement) {
+            if (dateMatch) {
+                dateElement.textContent = `${dateMatch[1]}年 第${dateMatch[2]}週`;
+            } else {
+                dateElement.textContent = new Date().toLocaleDateString('ja-JP');
+            }
+        }
+
+        // Back button event listener
+        const backBtn = document.getElementById('back-to-map-btn');
+        if (backBtn) {
+            backBtn.addEventListener('click', () => {
+                const mapView = document.getElementById('map-view');
+                const chartContainer = document.getElementById('pref-chart-container');
+                if (mapView) mapView.classList.remove('hidden');
+                if (chartContainer) chartContainer.classList.add('hidden');
+                currentPrefecture = null;
+            });
         }
 
         renderSummary(processedData);
@@ -79,7 +105,10 @@ async function init() {
 
     } catch (error) {
         console.error('Error fetching data:', error);
-        document.getElementById('summary-cards').innerHTML = '<p class="error">データの取得に失敗しました。詳細: ' + error.message + '</p>';
+        const summaryCards = document.getElementById('summary-cards');
+        if (summaryCards) {
+            summaryCards.innerHTML = '<p class="error">データの取得に失敗しました。詳細: ' + error.message + '</p>';
+        }
         updateLoadingState(false);
     }
 }
@@ -284,11 +313,12 @@ function generateAlerts(data) {
             let message = '全国的に平常レベルです。';
 
             if (disease === 'Influenza') {
-                if (value >= 10.0) { level = 'alert'; message = '全国的に警報レベルです。'; }
-                else if (value >= 1.0) { level = 'warning'; message = '全国的に流行入りしています。'; }
+                if (value >= 30.0) { level = 'alert'; message = '全国的に警報レベルです。'; }
+                else if (value >= 10.0) { level = 'warning'; message = '全国的に注意報レベルです。'; }
+                else if (value >= 1.0) { level = 'normal'; message = '全国的に流行入りしています。'; }
             } else if (disease === 'COVID-19') {
-                if (value >= 10.0) { level = 'alert'; message = '高い感染レベルです。'; }
-                else if (value >= 5.0) { level = 'warning'; message = '注意が必要です。'; }
+                if (value >= 15.0) { level = 'alert'; message = '高い感染レベルです。'; }
+                else if (value >= 10.0) { level = 'warning'; message = '注意が必要です。'; }
             } else if (disease === 'ARI') {
                 if (value >= 120.0) { level = 'alert'; message = '流行レベルです。'; }
                 else if (value >= 80.0) { level = 'warning'; message = '注意が必要です。'; }
@@ -302,6 +332,7 @@ function generateAlerts(data) {
 
 function renderSummary(data) {
     const container = document.getElementById('summary-cards');
+    if (!container) return;
     container.innerHTML = '';
 
     const diseases = ['Influenza', 'COVID-19', 'ARI'];
@@ -311,9 +342,10 @@ function renderSummary(data) {
         const alert = data.summary.alerts.find(a => a.disease === disease);
 
         const card = document.createElement('div');
-        card.className = 'card';
+        card.className = `card ${currentDisease === disease ? 'active' : ''}`;
+        card.dataset.disease = disease;
+        card.dataset.status = alert ? alert.level : 'normal';
         card.onclick = () => switchDisease(disease);
-        card.style.cursor = 'pointer';
 
         card.innerHTML = `
             <h4>${getDiseaseName(disease)}</h4>
@@ -327,11 +359,12 @@ function renderSummary(data) {
 function switchDisease(disease) {
     currentDisease = disease;
 
-    document.querySelectorAll('.nav-card').forEach(btn => {
-        if (btn.dataset.disease === disease) {
-            btn.classList.add('active');
+    // Update active card
+    document.querySelectorAll('.summary-cards .card').forEach(card => {
+        if (card.dataset.disease === disease) {
+            card.classList.add('active');
         } else {
-            btn.classList.remove('active');
+            card.classList.remove('active');
         }
     });
 
@@ -340,26 +373,24 @@ function switchDisease(disease) {
         titleElement.textContent = `${getDiseaseName(disease)} 全国状況`;
     }
 
-    // Reset view to map if needed, or keep current
-    // 地図表示に戻す
+    // Reset view to map
     const mapView = document.getElementById('map-view');
     const prefChartContainer = document.getElementById('pref-chart-container');
     if (mapView && prefChartContainer) {
         mapView.classList.remove('hidden');
         prefChartContainer.classList.add('hidden');
     }
+    currentPrefecture = null;
+
+    // 現在選択されている地域の詳細パネルも更新する
+    if (currentRegionId && typeof window.updateDetailPanel === 'function' && cachedData) {
+        window.updateDetailPanel(currentRegionId, cachedData, disease);
+    } else {
+        closePanel();
+    }
 
     if (cachedData) {
         renderDashboard(disease, cachedData);
-
-        // 状態復元
-        if (currentPrefecture) {
-            showPrefectureChart(currentPrefecture, disease);
-        } else if (currentRegionId) {
-            if (typeof window.updateDetailPanel === 'function') {
-                window.updateDetailPanel(currentRegionId, cachedData, disease);
-            }
-        }
     }
 }
 
@@ -375,45 +406,6 @@ function getDiseaseName(key) {
 let currentChart = null;
 
 function renderDashboard(disease, data) {
-    const contentDiv = document.querySelector('.dashboard-content');
-
-    // レイアウト初期化
-    if (!document.getElementById('japan-map')) {
-        contentDiv.innerHTML = `
-            <div class="left-panel">
-                <div id="map-view" class="view-container">
-                    <div id="japan-map" class="map-container"></div>
-                </div>
-                <div id="pref-chart-container" class="view-container hidden" style="background:white; padding:20px; border-radius:12px; height:600px; position:relative;">
-                    <button id="back-to-map-btn" style="position:absolute; top:10px; right:10px; z-index:10;">戻る</button>
-                    <div style="height: 100%; width: 100%;">
-                        <canvas id="prefectureHistoryChart"></canvas>
-                    </div>
-                </div>
-            </div>
-            <div class="right-panel">
-                <div id="chart-view" class="chart-container-wrapper">
-                    <canvas id="trendChart"></canvas>
-                </div>
-                <div class="detail-panel" id="detail-panel">
-                    <div class="panel-header">
-                        <h4 id="region-title">地域詳細</h4>
-                        <button class="close-btn" onclick="closePanel()">×</button>
-                    </div>
-                    <div class="panel-content" id="region-content">
-                        <p class="placeholder-text">地図上のエリアをクリックすると詳細が表示されます。</p>
-                    </div>
-                </div>
-            </div>
-        `;
-
-        document.getElementById('back-to-map-btn').addEventListener('click', () => {
-            document.getElementById('map-view').classList.remove('hidden');
-            document.getElementById('pref-chart-container').classList.add('hidden');
-            currentPrefecture = null; // 状態リセット
-        });
-    }
-
     if (typeof renderJapanMap === 'function') {
         if (document.getElementById('japan-map')) {
             renderJapanMap('japan-map', data, disease);
@@ -581,8 +573,14 @@ function showPrefectureChart(prefecture, disease) {
 window.showPrefectureChart = showPrefectureChart;
 
 function closePanel() {
-    document.getElementById('region-content').innerHTML = '<p class="placeholder-text">地図上のエリアをクリックすると詳細が表示されます。</p>';
-    document.getElementById('region-title').textContent = '地域詳細';
+    const content = document.getElementById('region-content');
+    if (content) {
+        content.innerHTML = '<p class="placeholder-text">地図上のエリアをクリックすると詳細が表示されます。</p>';
+    }
+    const title = document.getElementById('region-title');
+    if (title) {
+        title.textContent = '地域詳細';
+    }
 }
 
 document.addEventListener('DOMContentLoaded', init);
