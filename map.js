@@ -252,3 +252,12 @@ window.updateDetailPanel = function (regionId, data, disease) {
 
     showRegionDetails(regionId, label, prefectures, data, disease);
 };
+
+window.getRegionIdByPrefecture = function (prefectureName) {
+    for (const [regionId, prefectures] of Object.entries(REGIONS)) {
+        if (prefectures.includes(prefectureName)) {
+            return regionId;
+        }
+    }
+    return null;
+};
