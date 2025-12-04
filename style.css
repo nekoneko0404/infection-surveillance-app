@@ -531,3 +531,22 @@ body {
         flex-direction: column;
     }
 }
+/* Notification Bar */
+.notification-bar {
+    background-color: var(--accent-color);
+    color: white;
+    text-align: center;
+    padding: 10px 0;
+    font-size: 1rem;
+    font-weight: 600;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.notification-bar a {
+    color: white;
+    text-decoration: underline;
+}
+
+.notification-bar a:hover {
+    color: #f0f0f0;
+}
