@@ -568,10 +568,24 @@ async function init() {
 
         cachedData = processData(teitenData, ariData, tougaiData);
 
-        const dateMatch = teitenCsv.match(/(\d{4})年(\d{1,2})週/);
+        const dateMatch = teitenCsv.match(/(\d{4})年(\d{1,2})週(?:\((.*?)\))?/);
         const dateElement = document.getElementById('update-date');
         if (dateElement) {
-            dateElement.textContent = dateMatch ? `${dateMatch[1]}年 第${dateMatch[2]}週` : new Date().toLocaleDateString('ja-JP');
+            if (dateMatch) {
+                const year = dateMatch[1];
+                const week = dateMatch[2];
+                let dateRange = dateMatch[3];
+
+                if (dateRange) {
+                    // Convert 11月17日〜11月23日 to 11/17～11/23
+                    dateRange = dateRange.replace(/月/g, '/').replace(/日/g, '').replace(/[〜~]/g, '～');
+                    dateElement.textContent = `${year}年 第${week}週 （${dateRange}）`;
+                } else {
+                    dateElement.textContent = `${year}年 第${week}週`;
+                }
+            } else {
+                dateElement.textContent = new Date().toLocaleDateString('ja-JP');
+            }
         }
 
         const backBtn = document.getElementById('back-to-map-btn');
