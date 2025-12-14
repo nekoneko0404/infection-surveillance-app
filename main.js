@@ -268,7 +268,12 @@ function generateAlerts(data) {
 function renderSummary(data) {
     const container = document.getElementById('summary-cards');
     if (!container) return;
-    container.innerHTML = '';
+
+    // Clear previous content safely
+    while (container.firstChild) {
+        container.removeChild(container.firstChild);
+    }
+
     const diseases = ['Influenza', 'COVID-19', 'ARI'];
     diseases.forEach(disease => {
         const nationalData = data.data.find(d => d.disease === disease && d.prefecture === '全国');
@@ -280,11 +285,29 @@ function renderSummary(data) {
         card.dataset.status = alert ? alert.level : 'normal';
         card.onclick = () => switchDisease(disease);
 
-        card.innerHTML = `
-            <h4>${getDiseaseName(disease)}</h4>
-            <p class="value">${nationalData ? nationalData.value.toFixed(2) : '-'} <span class="unit">定点当たり</span></p>
-            <p class="status ${alert ? alert.level : 'normal'}">${alert ? alert.message : 'データなし'}</p>
-        `;
+        // h4 (title)
+        const title = document.createElement('h4');
+        title.textContent = getDiseaseName(disease);
+        card.appendChild(title);
+
+        // p (value)
+        const valuePara = document.createElement('p');
+        valuePara.className = 'value';
+        valuePara.textContent = `${nationalData ? nationalData.value.toFixed(2) : '-'} `;
+        
+        const unitSpan = document.createElement('span');
+        unitSpan.className = 'unit';
+        unitSpan.textContent = '定点当たり';
+        valuePara.appendChild(unitSpan);
+        card.appendChild(valuePara);
+
+        // p (status)
+        const statusPara = document.createElement('p');
+        const statusLevel = alert ? alert.level : 'normal';
+        statusPara.className = `status ${statusLevel}`;
+        statusPara.textContent = alert ? alert.message : 'データなし';
+        card.appendChild(statusPara);
+
         container.appendChild(card);
     });
 }
@@ -526,7 +549,14 @@ window.showPrefectureChart = showPrefectureChart;
 function closePanel() {
     const content = document.getElementById('region-content');
     if (content) {
-        content.innerHTML = '<p class="placeholder-text">地図上のエリアをクリックすると詳細が表示されます。</p>';
+        // Clear previous content safely
+        while (content.firstChild) {
+            content.removeChild(content.firstChild);
+        }
+        const p = document.createElement('p');
+        p.className = 'placeholder-text';
+        p.textContent = '地図上のエリアをクリックすると詳細が表示されます。';
+        content.appendChild(p);
     }
     const title = document.getElementById('region-title');
     if (title) {
@@ -611,7 +641,14 @@ async function init() {
         console.error('Error fetching data:', error);
         const summaryCards = document.getElementById('summary-cards');
         if (summaryCards) {
-            summaryCards.innerHTML = `<p class="error">データの取得に失敗しました。詳細: ${error.message}</p>`;
+            // Clear previous content safely
+            while (summaryCards.firstChild) {
+                summaryCards.removeChild(summaryCards.firstChild);
+            }
+            const errorPara = document.createElement('p');
+            errorPara.className = 'error';
+            errorPara.textContent = `データの取得に失敗しました。詳細: ${error.message}`;
+            summaryCards.appendChild(errorPara);
         }
         updateLoadingState(false);
     }
